@@ -1,0 +1,8 @@
+*.pyc
+*.[oa]
+*.so
+root/par/
+root/fig/
+root/output/
+pyroot/fig/
+pyroot/output/
