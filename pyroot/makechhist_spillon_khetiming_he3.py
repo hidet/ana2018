@@ -110,7 +110,7 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
     chtmp=0
     fin.cd()
     t = fin.Get(util.tree_name)
-    # for spped up: create tmp file to save the tree with basic cut
+    # for speed up: create tmp file to save the tree with basic cut
     ftmpname=util.datadir+fnamein+"_cut1.root"
     ftmp = ROOT.TFile.Open(ftmpname,"recreate")
     #newt = t.CopyTree(cut_all)

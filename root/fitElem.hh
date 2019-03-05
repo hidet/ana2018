@@ -40,12 +40,13 @@ public:
     fp_.BG=bg;
     fp_.lrange=lr;
     fp_.hrange=hr;
-    Int_t ipar=4;// default number of parameters
+    ndp_=5;
+    Int_t np=ndp_;
     Int_t np_bg=2;// <- need to change if you use other bg function
-    if (fp_.LET) {ipar=ipar+2;}
-    if (fp_.HET) {ipar=ipar+2;}
-    if (fp_.BG)  {ipar=ipar+np_bg;}
-    fp_.npar=ipar;
+    if (fp_.LET) {np+=2;}
+    if (fp_.HET) {np+=2;}
+    if (fp_.BG)  {np+=np_bg;}
+    fp_.npar=np;
   }
   ~FitElem(){}
 
@@ -56,7 +57,8 @@ public:
     fp_.ampl=par[1];
     fp_.mean=par[2];
     fp_.gaussian_sigma=par[3];
-    Int_t ipar=3;
+    // lorentzian widths are fixed in this function
+    Int_t ipar=ndp_-1;
     if (fp_.LET) {
       fp_.letail_ratio=par[ipar+1];
       fp_.letail_beta=par[ipar+2]/fp_.e2c;
@@ -147,6 +149,7 @@ private:
   TF1      func_;// main fit function
   TString  funcname_;// name of function
   Int_t    npx_;// number of points of function
+  Int_t    ndp_;// number of default parameters
 
 };
 
@@ -160,11 +163,13 @@ void FitElem::SetPrivateParams()
   fp_.amplErr = parErr[1];
   fp_.mean  = par[2];
   fp_.meanErr = parErr[2];
-  fp_.gaussian_sigma=par[3];
-  fp_.gaussian_sigmaErr = parErr[3];
-  fp_.fwhm = fp_.gaussian_sigma*fp_.e2c*2.355;
+  fp_.gaussian_sigma = par[3];// [ch or eV]
+  fp_.gaussian_sigmaErr = parErr[3];// [ch or eV]
+  fp_.width = xl_.lorentzian_widths[0];// [eV]
+  fp_.widthErr = xl_.lorentzian_widths_err[0];// [eV]
+  fp_.fwhm = fp_.gaussian_sigma*fp_.e2c*2.355;// [eV]
   fp_.fwhmErr = GetError(fp_.gaussian_sigma,fp_.gaussian_sigmaErr,
-                         fp_.e2c,fp_.e2cErr,"MUL")*2.355;
+                         fp_.e2c,fp_.e2cErr,"MUL")*2.355;// [eV]
   fp_.ene = xl_.energies[0];
   fp_.eneErr = xl_.energies_err[0];
   fp_.enediff = fp_.mean-xl_.energies[0];
@@ -173,7 +178,7 @@ void FitElem::SetPrivateParams()
   fp_.chisq = func_.GetChisquare();
   fp_.ndf = (Double_t)func_.GetNDF();
   fp_.nchi = fp_.chisq/fp_.ndf;
-  Int_t ipar=3;
+  Int_t ipar=ndp_-1;
   if (fp_.LET) {
     fp_.letail_ratio  = par[ipar+1];
     fp_.letail_ratioErr = parErr[ipar+1];
@@ -230,6 +235,7 @@ void FitElem::Plot(TH1F *h,Bool_t ENE=false, Bool_t SAVE=true)
   lhist->AddEntry(h->GetName(),h->GetName(),"pe");
   lhist->AddEntry(func_.GetName(),Form("%s",tag_.Data()),"l");
   lhist->AddEntry((TObject*)0,Form("FWHM = %.2f+-%.2f (eV)",fp_.fwhm,fp_.fwhmErr),"");
+  lhist->AddEntry((TObject*)0,Form("width = %.2f+-%.2f (eV)",fp_.width,fp_.widthErr),"");
   if (!ENE) {
     lhist->AddEntry((TObject*)0,Form(" e2c = %.2f+-%.2f (eV/ch)",fp_.e2c,fp_.e2cErr),"");
     lhist->AddEntry((TObject*)0,Form("mean = %.2f+-%.2f (ch)",fp_.mean,fp_.meanErr),"");
@@ -459,7 +465,8 @@ inline fitparam FitElemXrayItr(TH1F *h1,TSpline3 *sp3mean,
   // initial parameter arrays
   std::vector<string> paranames{"eV per ch","Voigt ampl","Voigt mean","Voigt sigma"};
   std::vector<double> tp{e2c,ampl,mean,gaussian_sigma};
-  std::vector<double> tpErr(4,0.);// 4 elements with 0.
+  Int_t ndp=Int_t(tp.size());
+  std::vector<double> tpErr(ndp,0.);// 4 elements with 0.
   if (LET) {
     paranames.push_back("LE tail ratio");
     paranames.push_back("LE tail beta");
@@ -493,7 +500,6 @@ inline fitparam FitElemXrayItr(TH1F *h1,TSpline3 *sp3mean,
     low=mean*0.985;
     high=mean*1.005;
   }
-  
   // fitfunc
   Int_t npx=10000;// number of drawing points of function
   TString funcname = Form("%s_%s",fitElem_tag.Data(),hname.Data());
@@ -505,7 +511,6 @@ inline fitparam FitElemXrayItr(TH1F *h1,TSpline3 *sp3mean,
   func.SetParameters(&tp.front());
   func.SetParErrors(&tpErr.front());
   for (Int_t i=0; i<npar; i++) {func.SetParName(i,paranames[i].data());}
-
   // fit parameter boundary
   if (!ENE) {
     func.SetParLimits(0, e2c*0.5, e2c*1.5);
@@ -514,7 +519,7 @@ inline fitparam FitElemXrayItr(TH1F *h1,TSpline3 *sp3mean,
     func.SetParLimits(1, 10., 1e8);
   func.SetParLimits(2, mean-100., mean+100.);
   func.SetParLimits(3, 2.,20.);
-  Int_t ipar=3;
+  Int_t ipar=ndp-1;
   if (LET) {// LE tail
     func.SetParLimits(ipar+1, 0.05, 0.3);
     func.SetParLimits(ipar+2, 20., 50.);
