@@ -43,16 +43,18 @@ dump = reload(dump)
 tesmap = reload(tesmap)
 
 
-
 class KHE():
     def __init__(self,pulse_runnum, noise_runnum, maxchans, calibration_runnum, badchans,
                  DATADIR, DELETE, GRTINFO, COLUMN_INFO,
-                 hdf5optname=None, catecut=None, target="Mn", cut_pre=0, cut_post=0):
+                 hdf5optname=None, catecut=None, target="Mn", cut_pre=0, cut_post=0,
+                 merged=False):
 
         self.pulse_runnum=pulse_runnum
         self.noise_runnum=noise_runnum
         self.calibration_runnum=calibration_runnum
         pulse_files,noise_files = util.get_file_lists(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR)
+        if merged:
+            pulse_files,noise_files = util.get_mergedfile_lists(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR)
         self.linefit_dict = {}
         self.DATADIR = DATADIR
         self.GRTINFO = GRTINFO
@@ -69,6 +71,7 @@ class KHE():
         self.bonly = False
         if not self.calibration_runnum is None: self.bonly = True
 
+        self.rootdir=dump.ROOTDIR+"/run%04d/"%self.pulse_runnum
         if hdf5optname is None:
             add=""
             if self.cut_pre>0 or self.cut_post>0:
@@ -87,11 +90,13 @@ class KHE():
                 elif self.catecut['prime']=='on': add = add + "_prime"
             self.hdf5_filename       = util.generate_hdf5_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_mass_2018"+add)
             self.hdf5_noisefilename  = util.generate_hdf5_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_noise"+add)
-            self.root_filename       = util.generate_root_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_mass_2018"+add)
+            #self.root_filename       = util.generate_root_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_mass_2018"+add)
+            self.root_filename       = util.generate_user_root_filename(self.rootdir,"run%04d_noi%04d"%(self.pulse_runnum,self.noise_runnum)+"_mass_2018"+add)
         else:
             self.hdf5_filename       = util.generate_hdf5_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_mass_2018"+str(hdf5optname))
             self.hdf5_noisefilename  = util.generate_hdf5_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_noise"+str(hdf5optname))
-            self.root_filename       = util.generate_root_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_mass_2018"+str(hdf5optname))
+            #self.root_filename       = util.generate_root_filename(pulse_files[0],"_noi%04d"%self.noise_runnum+"_mass_2018"+str(hdf5optname))
+            self.root_filename       = util.generate_user_root_filename(self.rootdir,"run%04d_noi%04d"%(self.pulse_runnum,self.noise_runnum)+"_mass_2018"+str(hdf5optname))
 
         if DELETE: self.delete_hdf5_outputs()
         self.data = mass.TESGroup(pulse_files, noise_files, hdf5_filename=self.hdf5_filename, hdf5_noisefilename=self.hdf5_noisefilename)

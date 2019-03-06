@@ -4,11 +4,10 @@ History:
 2018-07-04 ; ver 1.0; created from khe.py, E62 run 
 2018-07-05 ; ver 1.1; minor update by S.Y. 
 2018-07-06 ; ver 1.2; minor update by S.Y. 
-2019-03-05 ; ver 1.3; modified getfitter by H.Tatsuno
 
 """
 
-__version__ = '1.3'
+__version__ = '1.2'
 
 import mass
 import numpy as np
@@ -46,6 +45,19 @@ def get_file_lists(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR):
     return pulse_files, noise_files
 
 
+def get_mergedfile_lists(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR):
+    datadir = os.path.expanduser(DATADIR)
+    datamdir = os.path.expanduser(DATADIR)+"/merged"
+    dir_p = os.path.join(datamdir,"run%04d"%pulse_runnum)
+    dir_n = os.path.join(datadir,"run%04d"%noise_runnum)
+    avail_chans = mass.ljh_util.ljh_get_channels_both(dir_p,dir_n)
+    chans = avail_chans[:min(len(avail_chans),maxchans)]
+    for ch in badchans:
+        if ch in chans: chans.remove(ch)
+    pulse_files = [f+".ljh" for f in mass.ljh_util.ljh_chan_names(dir_p,chans)]
+    noise_files = [f+".ljh" for f in mass.ljh_util.ljh_chan_names(dir_n,chans)]
+    return pulse_files, noise_files
+
 def generate_hdf5_filename(rawname, add="_mass"):
     """Generate the appropriate HDF5 filename based on a file's LJH name.
     Takes /path/to/data_chan33.ljh --> /path/to/data_mass.hdf5
@@ -63,6 +75,11 @@ def generate_root_filename(rawname, add="_mass"):
     fparts = re.split(r"_chan\d+", rawname)
     prefix_path = fparts[0]
     return prefix_path + add + ".root"
+
+def generate_user_root_filename(dname, add="_mass"):
+    """generate root file name at the user specified directory
+    """
+    return dname + add + ".root"
 
 def init_row_timebase(ds):
     global NUM_ROWS
@@ -183,15 +200,13 @@ def linefitds(ds, linename):
     elo,ehi = mass.STANDARD_FEATURES[linename]-50,mass.STANDARD_FEATURES[linename]+50
     edges = np.arange(elo,ehi,1)
     counts, _ = np.histogram(ds.p_energy[ds.good()],edges)
-    #fitter = getattr(mass.line_fits,linename+"Fitter")()
-    fitter = getattr(mass,linename+"Fitter")()
+    fitter = getattr(mass.line_fits,linename+"Fitter")()
     fitter.fit(counts, edges,plot=False,)
     return fitter
 
 def linefit(counts, edges, linename):
-    #fitter = getattr(mass.calibration,linename+"Fitter")()
-    fitter = getattr(mass,linename+"Fitter")()
-    #fitter = getattr(mass.fluorescence_lines,linename)()
+    fitter = getattr(mass.calibration,linename+"Fitter")()
+#    fitter = getattr(mass.fluorescence_lines,linename)()
     fitter.fit(counts, edges, plot=False)
     params = fitter.last_fit_params[:]
     params[fitter.param_meaning["tail_frac"]]=0.25

@@ -14,8 +14,12 @@ import mass
 import khe_ext as ext
 import khe_util as util
 import numpy as np
-# dump ROOT 2018
-def dump_ROOT_2018(data,fout, EXTTRIG=True, GRTRIG=True, dumppulse=False):
+import os
+
+#ROOTDIR="/Volumes/HEATES_HD/root"
+ROOTDIR="%s/dumproot"%(os.environ['HEATESDATADIR'])
+
+def dump_ROOT_2018(data,fout,EXTTRIG=True, GRTRIG=True, dumppulse=False):
     from ROOT import gROOT
     gROOT.SetBatch(1)
     import ROOT
