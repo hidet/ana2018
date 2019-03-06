@@ -4,11 +4,12 @@ import os
 import pandas as pd
 import optparse
 
-datadir="%s/"%(os.environ['HEATESDATADIR'])
-rootdir="%s/root/output/"%(os.environ['HEATESANADIR'])
-pardir="%s/root/par/"%(os.environ['HEATESANADIR'])
-outdir="./output/"
-figdir="./fig/"
+datadir="%s"%(os.environ['HEATESDATADIR'])
+dumprootdir="%s/dumproot"%(os.environ['HEATESDATADIR'])
+rootdir="%s/root/output"%(os.environ['HEATESANADIR'])
+pardir="%s/root/par"%(os.environ['HEATESANADIR'])
+outdir="./output"# ./=pyroot
+figdir="./fig"# ./=pyroot
 hpht_phc="hpht_phc"# important hname
 RUNINFO="%s/csv/data_TMU_2018U.csv"%(os.environ['HEATESANADIR'])
 tree_name="chanall"
