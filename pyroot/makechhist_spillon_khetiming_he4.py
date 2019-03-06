@@ -10,8 +10,8 @@ import pyroot_util as util
 util= reload(util)
 
 
-#runs=util.runs_he3
-runs=util.runs_he4
+runs=util.runs_he3
+#runs=util.runs_he4
 #runs=[320,321]# for test
 
 # -- spill on / off --
@@ -50,20 +50,21 @@ cut_ene_all     = "%s && %s"%(cene,cut_all)
 cut_kheton_all  = "%s && %s"%(ckheton,cut_all)
 cut_khetoff_all = "%s && %s"%(ckhetoff,cut_all)
 # --------------------------------------------------------
-fnameins=["run%04d/run%04d_noi%04d_mass_2018%s"%(run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
-fnameout="%s_%s_run%04d_%04d"%(util.hpht_phc,htag,runs[0],runs[-1])
+fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
+fnameout="%s/%s_%s_run%04d_%04d"%(util.outdir,util.hpht_phc,htag,runs[0],runs[-1])
 for fnamein in fnameins:
-    if os.path.isfile(util.datadir+fnamein+".root")==False:
-        print "Error: file is missing %s"%(util.datadir+fnamein+".root")
+    if os.path.isfile(fnamein+".root")==False:
+        print "Error: file is missing %s"%(fnamein+".root")
         print "forgetting options? --pre=xxx --post=yyy"
         sys.exit(0)
 print "runs: ", runs
 print "basic cuts: ", cut_1
 print "sprmc: ", sprmc
 print "khet: ", ckheton
-print "output file: ", util.outdir+fnameout+".root"
+print "input files[0]: ", fnameins[0]+".root"
+print "output file:    ", fnameout+".root"
 util.check_continue()
-util.backup_rootfile(util.outdir+fnameout+".root")
+util.backup_rootfile(fnameout+".root")
 print "debug exit"
 sys.exit(0)# please remove this exit
 # --------------------------------------------------------
@@ -93,9 +94,9 @@ hout_khetons  = [ROOT.TH1F("%s_kheton%d_ch%d"%(util.hpht_phc,run,ch),
 hkhets = [ROOT.TH1F("hkhet%d"%(run),"hkhet%d"%(run),300,-150.,150.) for run in runs]# 1bin=1ch=240ns
 hkhet_sum = ROOT.TH1F("hkhet_sum","hkhet_sum",300,-150.,150.)
 hkhet_ene_sum = ROOT.TH2F("hkhet_ene_sum","hkhet_ene_sum",150,-150.,150.,140,ene_thl,ene_thh)
-fins = [ROOT.TFile.Open(util.datadir+fnamein+".root","read") for fnamein in fnameins]
-fout = ROOT.TFile.Open(util.outdir+fnameout+".root","recreate")
-print "%s is opened as recreate"%(util.outdir+fnameout+".root")
+fins = [ROOT.TFile.Open(fnamein+".root","read") for fnamein in fnameins]
+fout = ROOT.TFile.Open(fnameout+".root","recreate")
+print "%s is opened as recreate"%(fnameout+".root")
 # --------------------------------------------------------
 for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
     # loop for runs
@@ -104,14 +105,14 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
         if fin.IsOpen(): fin.Close()
         continue
     if not fout.IsOpen():
-        fout  = ROOT.TFile.Open(util.outdir+fnameout+".root","update")
-        print "%s is re-opened as update"%(util.outdir+fnameout+".root")
-    print "%s was read"%(util.datadir+fnamein+".root")
+        fout  = ROOT.TFile.Open(fnameout+".root","update")
+        print "%s is re-opened as update"%(fnameout+".root")
+    print "%s was read"%(fnamein+".root")
     chtmp=0
     fin.cd()
     t = fin.Get(util.tree_name)
     # for speed up: create tmp file to save the tree with basic cut
-    ftmpname=util.datadir+fnamein+"_cut1.root"
+    ftmpname=fnamein+"_cut1.root"
     ftmp = ROOT.TFile.Open(ftmpname,"recreate")
     #newt = t.CopyTree(cut_all)
     newt = t.CopyTree(cut_1)# without cutting sprm
@@ -120,10 +121,9 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
     for e in newt:
         # loop for events (from dump_root)
         ch=e.ch
-        if chtmp==ch:
+        if chtmp<ch:# ch is changed
             print "run%d ch%d"%(run,ch)
-            chtmp+=1
-        elif chtmp<ch: chtmp=ch
+            chtmp=ch
         try:    i=titles.index("%d_ch%d"%(run,ch))
         except:
             print "Error: cannot find %d_ch%d "%(run,ch)
@@ -199,5 +199,5 @@ hkhet_ene_sum.GetXaxis().SetTitle("Timing (1ch=240ns)")
 hkhet_ene_sum.Write()
     
 if fout.IsOpen(): fout.Close("R")
-print "%s has been created."%(util.outdir+fnameout+".root")
+print "%s has been created."%(fnameout+".root")
 # --------------------------------------------------------

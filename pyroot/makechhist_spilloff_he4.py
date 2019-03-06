@@ -10,24 +10,20 @@ import pyroot_util as util
 util= reload(util)
 
 
-runs=util.runs_he3
-#runs=util.runs_he4
+#runs=util.runs_he3
+runs=util.runs_he4
 #runs=[320,321]# for test
 
 # -- spill on / off --
-#beamflag = 0#      0:spill off, 1:spill on
-#htag     = "off"#  used for hist name and fout name
-beamflag = 1#     0:spill off, 1:spill on
-htag     = "on"#  used for hist name and fout name
+beamflag = 0#      0:spill off, 1:spill on
+htag     = "off"#  used for hist name and fout name
+#beamflag = 1#     0:spill off, 1:spill on
+#htag     = "on"#  used for hist name and fout name
 # -- cut parameters --
 sprm_m   =  -10
 sprm_p   =   10
 jbrs_m   = -400
 jbrs_p   =  350
-row_next_thl=70# beam timing cut low
-row_next_thh=90# beam timing cut high
-ene_thl = 6000
-ene_thh = 6700
 # --------------------------------------------------------
 options,args = util.parser.parse_args()
 cut_pre  = options.cut_pre
@@ -41,14 +37,8 @@ prime   = "primary==1"
 spill   = "beam==%d"%(beamflag)
 sprmc   = "sec_pr_mean>%d && sec_pr_mean<%d"%(sprm_m,sprm_p)
 jbrsc   = "jbr_region_sum>%d && jbr_region_sum<%d"%(jbrs_m,jbrs_p)
-ckheton  = "(row_next_extrig_nrp>%d && row_next_extrig_nrp<%d)"%(row_next_thl,row_next_thh)
-ckhetoff = "(row_next_extrig_nrp>%d || row_next_extrig_nrp<%d)"%(row_next_thh,row_next_thl)
-cene     = "energy_phc>%d && energy_phc<%d"%(ene_thl,ene_thh)
-cut_1           = "%s && %s && %s && %s"%(good,prime,spill,jbrsc)
-cut_all         = "%s && %s && %s && %s && %s"%(good,prime,spill,sprmc,jbrsc)
-cut_ene_all     = "%s && %s"%(cene,cut_all)
-cut_kheton_all  = "%s && %s"%(ckheton,cut_all)
-cut_khetoff_all = "%s && %s"%(ckhetoff,cut_all)
+cut_1   = "%s && %s && %s && %s"%(good,prime,spill,jbrsc)
+cut_all = "%s && %s && %s && %s && %s"%(good,prime,spill,sprmc,jbrsc)
 # --------------------------------------------------------
 fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
 fnameout="%s/%s_%s_run%04d_%04d"%(util.outdir,util.hpht_phc,htag,runs[0],runs[-1])
@@ -58,9 +48,8 @@ for fnamein in fnameins:
         print "forgetting options? --pre=xxx --post=yyy"
         sys.exit(0)
 print "runs: ", runs
-print "basic cuts: ", cut_1
+print "cuts (cut_1): ", cut_1
 print "sprmc: ", sprmc
-print "khet: ", ckheton
 print "input files[0]: ", fnameins[0]+".root"
 print "output file:    ", fnameout+".root"
 util.check_continue()
@@ -83,17 +72,6 @@ houts_sprmoffs = [ROOT.TH1F("%s_sprmoff%d_ch%d"%(util.hpht_phc,run,ch),
 houts_sprmons = [ROOT.TH1F("%s_sprmon%d_ch%d"%(util.hpht_phc,run,ch),
                            "%s_sprmon%d_ch%d"%(util.hpht_phc,run,ch),
                            nbin,minx,maxx) for run in runs for ch in chans]
-# pulse height histograms with timing cuts
-hout_khetoffs = [ROOT.TH1F("%s_khetoff%d_ch%d"%(util.hpht_phc,run,ch),
-                           "%s_khetoff%d_ch%d"%(util.hpht_phc,run,ch),
-                           nbin,minx,maxx) for run in runs for ch in chans]
-hout_khetons  = [ROOT.TH1F("%s_kheton%d_ch%d"%(util.hpht_phc,run,ch),
-                           "%s_kheton%d_ch%d"%(util.hpht_phc,run,ch),
-                           nbin,minx,maxx) for run in runs for ch in chans]
-# timing histograms
-hkhets = [ROOT.TH1F("hkhet%d"%(run),"hkhet%d"%(run),300,-150.,150.) for run in runs]# 1bin=1ch=240ns
-hkhet_sum = ROOT.TH1F("hkhet_sum","hkhet_sum",300,-150.,150.)
-hkhet_ene_sum = ROOT.TH2F("hkhet_ene_sum","hkhet_ene_sum",150,-150.,150.,140,ene_thl,ene_thh)
 fins = [ROOT.TFile.Open(fnamein+".root","read") for fnamein in fnameins]
 fout = ROOT.TFile.Open(fnameout+".root","recreate")
 print "%s is opened as recreate"%(fnameout+".root")
@@ -134,17 +112,6 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
             houts_sprmoffs[i].Fill(e.filt_value_phc)
         elif e.sec_pr_mean>sprm_m and e.sec_pr_mean<sprm_p:
             houts_sprmons[i].Fill(e.filt_value_phc)
-            if e.energy_phc>ene_thl and e.energy_phc<ene_thh:
-                hkhets[j].Fill(-1.*e.row_next_extrig_nrp)
-                hkhets[j].Fill(+1.*e.row_after_extrig_nrp)
-                hkhet_sum.Fill(-1.*e.row_next_extrig_nrp)
-                hkhet_sum.Fill(+1.*e.row_after_extrig_nrp)
-                hkhet_ene_sum.Fill(-1.*e.row_next_extrig_nrp,e.energy_phc)
-                hkhet_ene_sum.Fill(+1.*e.row_after_extrig_nrp,e.energy_phc)
-            if e.row_next_extrig_nrp>row_next_thl and e.row_next_extrig_nrp<row_next_thh:
-                hout_khetons[i].Fill(e.filt_value_phc)
-            elif e.row_next_extrig_nrp<row_next_thl or e.row_next_extrig_nrp>row_next_thh:
-                hout_khetoffs[i].Fill(e.filt_value_phc)
                         
     for chan in chans:
         i=titles.index("%d_ch%d"%(run,chan))
@@ -165,39 +132,10 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
         houts_sprmons[i].GetXaxis().SetTitle("filt_value_phc [ch]")
         houts_sprmons[i].GetYaxis().SetTitle("Counts / ch")
         houts_sprmons[i].Write()
-        hout_khetons[i].Sumw2()
-        hout_khetons[i].SetTitle("run%04d ch%d filt_value_phc, kheton %s"%(run,chan,cut_kheton_all))
-        hout_khetons[i].GetXaxis().SetTitle("filt_value_phc [ch]")
-        hout_khetons[i].GetYaxis().SetTitle("Counts / ch")
-        hout_khetons[i].Write()
-        hout_khetoffs[i].Sumw2()
-        hout_khetoffs[i].SetTitle("run%04d ch%d filt_value_phc, khetoff %s"%(run,chan,cut_khetoff_all))
-        hout_khetoffs[i].GetXaxis().SetTitle("filt_value_phc [ch]")
-        hout_khetoffs[i].GetYaxis().SetTitle("Counts / ch")
-        hout_khetoffs[i].Write()
 
-    fout.cd()
-    hkhets[j].Sumw2()
-    hkhets[j].SetTitle("run%04d row_next_extrig_nrp, %s"%(run,cut_ene_all))
-    hkhets[j].GetXaxis().SetTitle("Timing (1ch=240ns)")
-    hkhets[j].GetYaxis().SetTitle("Counts / ch")
-    hkhets[j].Write()
-    
     if fin.IsOpen(): fin.Close()
     if ftmp.IsOpen(): ftmp.Close()
 
-fout.cd()
-hkhet_sum.Sumw2()
-hkhet_sum.SetTitle("row_next_extrig_nrp, %s"%(cut_ene_all))
-hkhet_sum.GetXaxis().SetTitle("Timing (1ch=240ns)")
-hkhet_sum.GetYaxis().SetTitle("Counts / ch")
-hkhet_sum.Write()
-
-hkhet_ene_sum.SetTitle("timing vs energy_phc, %s"%(cut_ene_all))
-hkhet_ene_sum.GetYaxis().SetTitle("Energy [eV]")
-hkhet_ene_sum.GetXaxis().SetTitle("Timing (1ch=240ns)")
-hkhet_ene_sum.Write()
-    
 if fout.IsOpen(): fout.Close("R")
 print "%s has been created."%(fnameout+".root")
 # --------------------------------------------------------

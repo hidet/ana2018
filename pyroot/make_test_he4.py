@@ -50,31 +50,31 @@ cut_ene_all     = "%s && %s"%(cene,cut_all)
 cut_kheton_all  = "%s && %s"%(ckheton,cut_all)
 cut_khetoff_all = "%s && %s"%(ckhetoff,cut_all)
 # --------------------------------------------------------
-fnameins=["run%04d/run%04d_noi%04d_mass_2018%s"%(run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
-fnameout="test_%s_run%04d_%04d"%(htag,runs[0],runs[-1])
+# use cut_1 tree
+fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s_cut1"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
+fnameout="%s/test_%s_run%04d_%04d"%(util.outdir,htag,runs[0],runs[-1])
 for fnamein in fnameins:
-    if os.path.isfile(util.datadir+fnamein+".root")==False:
-        print "Error: file is missing %s"%(util.datadir+fnamein+".root")
+    if os.path.isfile(fnamein+".root")==False:
+        print "Error: file is missing %s"%(fnamein+".root")
         print "forgetting options? --pre=xxx --post=yyy"
         sys.exit(0)
 print "runs: ", runs
 print "basic cuts: ", cut_1
 print "sprmc: ", sprmc
 print "khet: ", ckheton
-print "output file: ", util.outdir+fnameout+".root"
+print "output file: ", fnameout+".root"
 util.check_continue()
-util.backup_rootfile(util.outdir+fnameout+".root")
+util.backup_rootfile(fnameout+".root")
 # --------------------------------------------------------
 chans = np.arange(480)[1::2]
 titles = ["%d_ch%d"%(run,ch) for run in runs for ch in chans]
 # timing histograms
 hkhet_sum = ROOT.TH1F("hkhet_sum","hkhet_sum",300,-150.,150.)
 hkhet_ene_sum = ROOT.TH2F("hkhet_ene_sum","hkhet_ene_sum",150,-150.,150.,140,ene_thl,ene_thh)
-#fins = [ROOT.TFile.Open(util.datadir+fnamein+".root","read") for fnamein in fnameins]
-fins = [ROOT.TFile.Open(util.datadir+fnamein+"_cut1.root","read") for fnamein in fnameins]
-fout = ROOT.TFile.Open(util.outdir+fnameout+".root","recreate")
-print "%s is opened as recreate"%(util.outdir+fnameout+".root")
-tout = ROOT.TTree("tree%d_%d"%(runs[0],runs[-1]),"tree%d_%d"%(runs[0],runs[-1]))
+fins = [ROOT.TFile.Open(fnamein+".root","read") for fnamein in fnameins]
+fout = ROOT.TFile.Open(fnameout+".root","recreate")
+print "%s is opened as recreate"%(fnameout+".root")
+tout = ROOT.TTree("tree%04d_%04d"%(runs[0],runs[-1]),"tree%04d_%04d"%(runs[0],runs[-1]))
 toutfill=tout.Fill
 toutbranch=tout.Branch
 bp_ch   = np.zeros(1,dtype=np.intc)
@@ -86,37 +86,28 @@ toutbranch('ene',         bp_ene,          'energy/D')
 toutbranch('khet',        bp_khet,         'timediff/D')
 toutbranch('sprm',        bp_sprm,         'sec_sprm/D')
 # --------------------------------------------------------
-for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
+for j, (run,fin) in enumerate(zip(runs,fins)):
     # loop for runs
     if fin.GetListOfKeys().Contains(util.tree_name)==False:# no tree, skip this run
         print "run%d, no TTree name %s"%(run,util.tree_name)
         if fin.IsOpen(): fin.Close()
         continue
-    
-    fcalib=util.pardir+"calib/sprmon/calib_sprmon%d.root"%(run)
+    # calibration TSpline
+    fcalib=util.pardir+"/calib/sprmon/calib_sprmon%d.root"%(run)
     if os.path.isfile(fcalib)==False:
         print "Error: file is missing %s"%(fcalib)
         sys.exit(0)
     fc=ROOT.TFile.Open(fcalib,"read")
     listfc=fc.GetListOfKeys();
+    # re-open fout
     if not fout.IsOpen():
-        fout  = ROOT.TFile.Open(util.outdir+fnameout+".root","update")
-        print "%s is re-opened as update"%(util.outdir+fnameout+".root")
-    print "%s was read"%(util.datadir+fnamein+".root")
+        fout  = ROOT.TFile.Open(fnameout+".root","update")
+        print "%s is re-opened as update"%(fnameout+".root")
+    print "%s was read"%(fin.GetName())
     
     chtmp=0
     fin.cd()
     t = fin.Get(util.tree_name)
-    # --------------------------------------------------------------
-    ## for spped up: create tmp file to save the tree with basic cut
-    #ftmpname=util.datadir+fnamein+"_cut1.root"
-    #ftmp = ROOT.TFile.Open(ftmpname,"recreate")
-    ##newt = t.CopyTree(cut_all)
-    #newt = t.CopyTree(cut_1)# without cutting sprm
-    #print "%s has been created with %s"%(ftmpname,util.tree_name)
-    # --------------------------------------------------------------
-    fin.cd()
-    #for e in newt:
     for e in t:
         # loop for events (from dump_root)
         ch=e.ch
@@ -125,7 +116,6 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
             chtmp=ch
             hname_calib="hpht_phc_sprmon%d_ch%d"%(run,ch)
             sp3name="sp3calib_%s"%(hname_calib)
-            #if ( listfc.Contains(sp3name) ): sp3calib=fc.Get(sp3name)
             try:
                 sp3calib=fc.Get(sp3name)
                 sp3calibEval=sp3calib.Eval
@@ -155,7 +145,6 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
                 hkhet_ene_sum.Fill(+1.*e.row_after_extrig_nrp,ene_phc)
                         
     if fin.IsOpen(): fin.Close()
-    #if ftmp.IsOpen(): ftmp.Close()
 
 fout.cd()
 tout.Write()
@@ -170,5 +159,5 @@ hkhet_ene_sum.GetXaxis().SetTitle("Timing (1ch=240ns)")
 hkhet_ene_sum.Write()
     
 if fout.IsOpen(): fout.Close("R")
-print "%s has been created."%(util.outdir+fnameout+".root")
+print "%s has been created."%(fnameout+".root")
 # --------------------------------------------------------

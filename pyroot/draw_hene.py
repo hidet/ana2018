@@ -9,7 +9,6 @@ import pyroot_util as util
 util=reload(util)
 
 
-
 # --------------------------------------------------------
 # --- files ---
 # HE3: hss[0]
@@ -24,7 +23,7 @@ util=reload(util)
 target=["he3","he4"]
 fnames=["hene_phc_sprmon160_301_he3_spline",
         "hene_phc_sprmon320_424_he4_spline"]
-files = [ROOT.TFile.Open(util.rootdir+fname+".root") for fname in fnames]
+files = [ROOT.TFile.Open(util.rootdir+"/"+fname+".root") for fname in fnames]
 lists = [f.GetListOfKeys() for f in files]
 lnks  = [l.FirstLink() for l in lists]
 hnamess=[]
@@ -43,8 +42,6 @@ l_khe4=ROOT.TLine(util.KHE4LA_K,0.,util.KHE4LA_K,maxh)
 l_khe4.SetLineColor(3)
 l_khe3=ROOT.TLine(util.KHE3LA,0.,util.KHE3LA,maxh)
 l_khe3.SetLineColor(3)
-l_pic=ROOT.TLine(util.PIC4TO3,0.,util.PIC4TO3,maxh)
-l_pic.SetLineColor(5)
 for j, (tgt,hs,hnames) in enumerate(zip(target,hss,hnamess)):
     nrebin=8# 1bin=2eV
     fscale=0.01
@@ -79,9 +76,8 @@ for j, (tgt,hs,hnames) in enumerate(zip(target,hss,hnamess)):
     leg.Draw("same")
     l_khe3.Draw("same")
     l_khe4.Draw("same")
-    l_pic.Draw("same")    
     c1.Update()
-    c1.SaveAs(util.figdir+hnames[0]+"_%s.pdf"%(tgt))
+    c1.SaveAs(util.figdir+"/"+hnames[0]+"_%s.pdf"%(tgt))
 
     c2name="c2_%s"%(tgt)
     c2 = ROOT.TCanvas(c2name,c2name)
@@ -96,7 +92,7 @@ for j, (tgt,hs,hnames) in enumerate(zip(target,hss,hnamess)):
         hs[i+1].Draw("histsame")
     leg.Draw("same")
     c2.Update()
-    c2.SaveAs(util.figdir+hnames[0]+"_%s_log.pdf"%(tgt))
+    c2.SaveAs(util.figdir+"/"+hnames[0]+"_%s_log.pdf"%(tgt))
 
 
 # compares khet histograms
@@ -123,6 +119,5 @@ hss[1][3].Draw("histsame")
 leg2.Draw("same")
 l_khe3.Draw("same")
 l_khe4.Draw("same")
-l_pic.Draw("same")
 c3.Update()
-c3.SaveAs(util.figdir+hnames[0]+"_comp.pdf")
+c3.SaveAs(util.figdir+"/"+hnames[0]+"_comp.pdf")

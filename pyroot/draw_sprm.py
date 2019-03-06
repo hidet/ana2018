@@ -11,9 +11,8 @@ import optparse
 import pyroot_util as util
 util=reload(util)
 
-
-fnames=["test_on_run0160_0301","test_on_run0320_0424"]
-runs=["160_301","320_424"]
+runs=["0160_0301","0320_0424"]
+fnames=["test_on_run%s"%(r) for r in runs]
 tnames=["tree%s"%(r) for r in runs]
 files = [ROOT.TFile.Open(util.outdir+fname+".root") for fname in fnames]
 trees=[f.Get(tn) for f,tn in zip(files,tnames)]
@@ -89,7 +88,7 @@ leg1.Draw("same")
 l_khe3.Draw("same")
 l_khe3c.Draw("same")
 cvs[0].Update()
-cvs[0].SaveAs(util.figdir+"sprmcuts_run%s_%d.pdf"%(runs[0],rebin))
+cvs[0].SaveAs(util.figdir+"/sprmcuts_run%s_%d.pdf"%(runs[0],rebin))
 
 
 
@@ -116,4 +115,4 @@ leg2.Draw("same")
 l_khe4.Draw("same")
 l_khe4c.Draw("same")
 cvs[1].Update()
-cvs[1].SaveAs(util.figdir+"sprmcuts_run%s_%d.pdf"%(runs[1],rebin))
+cvs[1].SaveAs(util.figdir+"/sprmcuts_run%s_%d.pdf"%(runs[1],rebin))
