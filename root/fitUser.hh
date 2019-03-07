@@ -57,7 +57,7 @@ public:
     fp_.ampl=par[1];
     fp_.mean=par[2];
     fp_.gaussian_sigma=par[3];
-    fp_.width=par[4];// <- this is new
+    fp_.width=par[4];// <- this is new [eV]
     Int_t ipar=ndp_-1;// 5-1=4
     if (fp_.LET) {
       fp_.letail_ratio=par[ipar+1];

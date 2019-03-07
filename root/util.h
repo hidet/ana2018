@@ -46,8 +46,10 @@ std::vector<string> badch{"ch257","ch265","ch293"};
 static const TString dout="./output";
 static const TString makechhist_dir="pyroot";
 static const TString anadir=gSystem->Getenv("HEATESANADIR");
-static const TString fhe3=Form("%s/%s/output/hpht_phc_on_run0160_0301.root",anadir.Data(),makechhist_dir.Data());
-static const TString fhe4=Form("%s/%s/output/hpht_phc_on_run0320_0424.root",anadir.Data(),makechhist_dir.Data());
+static const TString fhe3_on=Form("%s/%s/output/hpht_phc_on_run0160_0301.root",anadir.Data(),makechhist_dir.Data());
+static const TString fhe4_on=Form("%s/%s/output/hpht_phc_on_run0320_0424.root",anadir.Data(),makechhist_dir.Data());
+static const TString fhe3_off=Form("%s/%s/output/hpht_phc_off_run0160_0301.root",anadir.Data(),makechhist_dir.Data());
+static const TString fhe4_off=Form("%s/%s/output/hpht_phc_off_run0320_0424.root",anadir.Data(),makechhist_dir.Data());
 
 // important tags used for directories and file names
 static const TString hpht_phc       = "hpht_phc";

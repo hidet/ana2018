@@ -25,7 +25,8 @@ void menu()
   cout << endl;
   cout << "-- How to use --" << endl;
   cout << "run -q energycalib.cxx" << endl;
-  // run -q 'energycalib.cxx("sprmon","he4")'
+  // run -q 'energycalib.cxx("on","hoge")'
+  // run -q 'energycalib.cxx("off","hoge")'
   return;
 }
 
@@ -326,7 +327,7 @@ inline void FitMultiLinesEne(TH1F *h1,Int_t rebin=4,
   return;
 }
 
-inline void LoopChs(TString hntag="sprmon",Int_t run=381,
+inline void LoopChs(TString hntag="hogehoge",Int_t run=381,
                     TString fname="hoge.root",
                     Int_t rebin=4,
                     Bool_t LET=true,Bool_t HET=false,Bool_t BG=false,
@@ -362,30 +363,44 @@ inline void LoopChs(TString hntag="sprmon",Int_t run=381,
   return;
 }
 
-int energycalib(TString hntag="sprmon",TString target="hoge")
+int energycalib(TString spill="off",TString target="hoge")
 {
   gROOT->SetBatch(true);
   TString fname="";
-  Int_t nruns=1;
+  Int_t   nruns=1;
+  TString hntag="";
   std::vector<int> runs;
+  //---------------------------------------------------------
   if (target=="he4") {
-    fname = fhe4;
-    nruns = nruns_he4;
+    nruns=nruns_he4;
     for (int i=0; i<nruns; ++i) runs.push_back(runs_he4[i]);
   } else if (target=="he3") {
-    fname = fhe3;
-    nruns = nruns_he3;
+    nruns=nruns_he3;
     for (int i=0; i<nruns; ++i) runs.push_back(runs_he3[i]);
-  } else {// user define e.g.,
-    fname = fhe4;
-    runs={395};
-    //runs={385,386,387,389};
+  } else {
+    runs={160};
     nruns=int(runs.size());
+  }
+  //---------------------------------------------------------
+  if (spill!="on" && spill!="off") {
+    cout << "spill should be off or on" << endl;
+    return 1;
+  } else if (spill=="on") {// spillon
+    hntag="sprmon";
+    if (target=="he4")      fname=fhe4_on;
+    else if (target=="he3") fname=fhe3_on;
+    else fname=fhe3_on;
+  } else if (spill=="off") {// spilloff
+    hntag="offsprmon";
+    if (target=="he4")      fname=fhe4_off;
+    else if (target=="he3") fname=fhe3_off;
+    else fname=fhe3_off;
   }
   if (gSystem->AccessPathName(fname)) {
     cout << "Error: cannot open file " << fname << endl;
     return 1;
   }
+  //---------------------------------------------------------
   Int_t rebin=4;
   Bool_t LET=true;Bool_t HET=false;Bool_t BG=false;
   Bool_t ENE=false;Bool_t PLOT=false;Bool_t SAVE=true;

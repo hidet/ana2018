@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## He3 runs
+# He3 runs
 #run=(160     161     162     163     165     166     167     170     171     172
 #     175     176     177     178     179     180     181     182     183     186
 #     187     188     189     190     191     192     193     194     195     196
@@ -13,7 +13,8 @@
 #     296     297     298     299     300     301)
 
 # He4 runs
-run=(320     321     327     328     329     330     331     332     333     334
+#run=(320)
+run=(321     327     328     329     330     331     332     333     334
      335     336     337     338     340     341     345     346     347     348
      349     350     351     352     353     354     355     356     999     359
      363     364     366     367     368     369     370     371     372     373
@@ -21,25 +22,26 @@ run=(320     321     327     328     329     330     331     332     333     334
      387     389     395     396     397     398     399     400     401     402
      403     406     407     408     410     411     421     422     423     424)
 
-for (( i=0; i<${#run[*]}; i++))
-    {
-        ## beamON, forceNew=true, summaryNew=true, calibNew=true, exttrigNew=true, grptrigNew=true, dump ROOT=true, ROOTEXT=true, ROOTGRP=true
-        #python run_heates_single.py "${run[i]}" -fsceg -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
 
-        ## beamOFF, forceNew=true, summaryNew=true, calibNew=true, exttrigNew=true, grptrigNew=true, dump ROOT=true, ROOTEXT=true, ROOTGRP=true
-        #python run_heates_single.py "${run[i]}" -fsceg -REG --beam=off --sprmc=on --jbrsc=on --pre=150 --post=550
-
-        ## beamON, new calibration
-        #python run_heates_single.py "${run[i]}" -c -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
-
-        ## beamOFF, new calibration
-        #python run_heates_single.py "${run[i]}" -c -REG --beam=off --sprmc=on --jbrsc=on --pre=150 --post=550
-
-        ## beamON, new external trigger and new calib
-        #python run_heates_single.py "${run[i]}" -ce -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
-
-        ## beamOn, new group trigger and new calib
-        #python run_heates_single.py "${run[i]}" -cg -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
-
-        echo "${run[i]}"
-    }
+for r in "${run[@]}"
+do
+    ## beamON, forceNew=true, summaryNew=true, calibNew=true, exttrigNew=true, grptrigNew=true, dump ROOT=true, ROOTEXT=true, ROOTGRP=true
+    #python run_heates_single.py $r -fsceg -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
+    
+    ## beamOFF, forceNew=true, summaryNew=true, calibNew=true, exttrigNew=true, grptrigNew=true, dump ROOT=true, ROOTEXT=true, ROOTGRP=true
+    #python run_heates_single.py $r -fsceg -REG --beam=off --sprmc=on --jbrsc=on --pre=150 --post=550
+    
+    ## beamON, new calibration
+    python run_heates_single.py $r -c -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
+    
+    ## beamOFF, new calibration
+    #python run_heates_single.py $r -c -REG --beam=off --sprmc=on --jbrsc=on --pre=150 --post=550
+    
+    ## beamON, new external trigger and new calib
+    #python run_heates_single.py $r -ce -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
+    
+    ## beamOn, new group trigger and new calib
+    #python run_heates_single.py $r -cg -REG --beam=on --sprmc=on --jbrsc=on --pre=150 --post=550
+    
+    echo $r
+done

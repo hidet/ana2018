@@ -40,7 +40,7 @@ public:
     fp_.BG=bg;
     fp_.lrange=lr;
     fp_.hrange=hr;
-    ndp_=5;
+    ndp_=4;
     Int_t np=ndp_;
     Int_t np_bg=2;// <- need to change if you use other bg function
     if (fp_.LET) {np+=2;}

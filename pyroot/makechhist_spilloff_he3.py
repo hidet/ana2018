@@ -37,10 +37,12 @@ prime   = "primary==1"
 spill   = "beam==%d"%(beamflag)
 sprmc   = "sec_pr_mean>%d && sec_pr_mean<%d"%(sprm_m,sprm_p)
 jbrsc   = "jbr_region_sum>%d && jbr_region_sum<%d"%(jbrs_m,jbrs_p)
-cut_1           = "%s && %s && %s && %s"%(good,prime,spill,jbrsc)
-cut_all         = "%s && %s && %s && %s && %s"%(good,prime,spill,sprmc,jbrsc)
+cut_1   = "%s && %s && %s && %s"%(good,prime,spill,jbrsc)
+cut_all = "%s && %s && %s && %s && %s"%(good,prime,spill,sprmc,jbrsc)
 # --------------------------------------------------------
-fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
+#fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
+# to use cut1
+fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s_cut1"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
 fnameout="%s/%s_%s_run%04d_%04d"%(util.outdir,util.hpht_phc,htag,runs[0],runs[-1])
 for fnamein in fnameins:
     if os.path.isfile(fnamein+".root")==False:
@@ -54,8 +56,8 @@ print "input files[0]: ", fnameins[0]+".root"
 print "output file:    ", fnameout+".root"
 util.check_continue()
 util.backup_rootfile(fnameout+".root")
-print "debug exit"
-sys.exit(0)# please remove this exit
+#print "debug exit"
+#sys.exit(0)# please remove this exit
 # --------------------------------------------------------
 chans = np.arange(480)[1::2]
 titles = ["%d_ch%d"%(run,ch) for run in runs for ch in chans]
@@ -66,11 +68,11 @@ maxx = 25000.
 houts = [ROOT.TH1F("%s_%s%d_ch%d"%(util.hpht_phc,htag,run,ch),
                    "%s_%s%d_ch%d"%(util.hpht_phc,htag,run,ch),
                    nbin,minx,maxx) for run in runs for ch in chans]
-houts_sprmoffs = [ROOT.TH1F("%s_sprmoff%d_ch%d"%(util.hpht_phc,run,ch),
-                            "%s_sprmoff%d_ch%d"%(util.hpht_phc,run,ch),
+houts_sprmoffs = [ROOT.TH1F("%s_offsprmoff%d_ch%d"%(util.hpht_phc,run,ch),
+                            "%s_offsprmoff%d_ch%d"%(util.hpht_phc,run,ch),
                             nbin,minx,maxx) for run in runs for ch in chans]
-houts_sprmons = [ROOT.TH1F("%s_sprmon%d_ch%d"%(util.hpht_phc,run,ch),
-                           "%s_sprmon%d_ch%d"%(util.hpht_phc,run,ch),
+houts_sprmons = [ROOT.TH1F("%s_offsprmon%d_ch%d"%(util.hpht_phc,run,ch),
+                           "%s_offsprmon%d_ch%d"%(util.hpht_phc,run,ch),
                            nbin,minx,maxx) for run in runs for ch in chans]
 fins = [ROOT.TFile.Open(fnamein+".root","read") for fnamein in fnameins]
 fout = ROOT.TFile.Open(fnameout+".root","recreate")
@@ -89,14 +91,15 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
     chtmp=0
     fin.cd()
     t = fin.Get(util.tree_name)
-    # for speed up: create tmp file to save the tree with basic cut
-    ftmpname=fnamein+"_cut1.root"
-    ftmp = ROOT.TFile.Open(ftmpname,"recreate")
-    #newt = t.CopyTree(cut_all)
-    newt = t.CopyTree(cut_1)# without cutting sprm
-    print "%s has been created with %s"%(ftmpname,util.tree_name)
-    fin.cd()
-    for e in newt:
+    ## for speed up: create tmp file to save the tree with basic cut
+    #ftmpname=fnamein+"_cut1.root"
+    #ftmp = ROOT.TFile.Open(ftmpname,"recreate")
+    ##newt = t.CopyTree(cut_all)
+    #newt = t.CopyTree(cut_1)# without cutting sprm
+    #print "%s has been created with %s"%(ftmpname,util.tree_name)
+    #fin.cd()
+    #for e in newt:
+    for e in t:
         # loop for events (from dump_root)
         ch=e.ch
         if chtmp<ch:# ch is changed
@@ -134,7 +137,7 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
         houts_sprmons[i].Write()
 
     if fin.IsOpen(): fin.Close()
-    if ftmp.IsOpen(): ftmp.Close()
+    #if ftmp.IsOpen(): ftmp.Close()
 
 if fout.IsOpen(): fout.Close("R")
 print "%s has been created."%(fnameout+".root")
