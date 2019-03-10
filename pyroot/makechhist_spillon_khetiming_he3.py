@@ -50,7 +50,8 @@ cut_ene_all     = "%s && %s"%(cene,cut_all)
 cut_kheton_all  = "%s && %s"%(ckheton,cut_all)
 cut_khetoff_all = "%s && %s"%(ckhetoff,cut_all)
 # --------------------------------------------------------
-fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
+# use cut1
+fnameins=["%s/run%04d/run%04d_noi%04d_mass_2018%s_cut1"%(util.dumprootdir,run,run,noi,add) for run,noi in zip(runs,util.get_noise_list(runs))]
 fnameout="%s/%s_%s_run%04d_%04d"%(util.outdir,util.hpht_phc,htag,runs[0],runs[-1])
 for fnamein in fnameins:
     if os.path.isfile(fnamein+".root")==False:
@@ -112,13 +113,14 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
     fin.cd()
     t = fin.Get(util.tree_name)
     # for speed up: create tmp file to save the tree with basic cut
-    ftmpname=fnamein+"_cut1.root"
-    ftmp = ROOT.TFile.Open(ftmpname,"recreate")
+    #ftmpname=fnamein+"_cut1.root"
+    #ftmp = ROOT.TFile.Open(ftmpname,"recreate")
     #newt = t.CopyTree(cut_all)
-    newt = t.CopyTree(cut_1)# without cutting sprm
-    print "%s has been created with %s"%(ftmpname,util.tree_name)
-    fin.cd()
-    for e in newt:
+    #newt = t.CopyTree(cut_1)# without cutting sprm
+    #print "%s has been created with %s"%(ftmpname,util.tree_name)
+    #fin.cd()
+    #for e in newt:
+    for e in t:
         # loop for events (from dump_root)
         ch=e.ch
         if chtmp<ch:# ch is changed
@@ -184,7 +186,7 @@ for j, (run,fin,fnamein) in enumerate(zip(runs,fins,fnameins)):
     hkhets[j].Write()
     
     if fin.IsOpen(): fin.Close()
-    if ftmp.IsOpen(): ftmp.Close()
+    #if ftmp.IsOpen(): ftmp.Close()
 
 fout.cd()
 hkhet_sum.Sumw2()

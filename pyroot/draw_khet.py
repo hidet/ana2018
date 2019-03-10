@@ -11,22 +11,23 @@ import optparse
 import pyroot_util as util
 util=reload(util)
 
-# best timing window 77<=t<81
-
+# -----------------------------------------------------------
+spilltag="on"
 runs=["0160_0301","0320_0424"]
-fnames=["test_on_run%s"%(r) for r in runs]
-tnames=["tree%s"%(r) for r in runs]
-files = [ROOT.TFile.Open(util.outdir+fname+".root") for fname in fnames]
+fnames=[util.outdir+"/"+"tree_%s_run%s"%(spilltag,r) for r in runs]
+tnames=["tree","tree"]
+files = [ROOT.TFile.Open(fname+".root") for fname in fnames]
 trees=[f.Get(tn) for f,tn in zip(files,tnames)]
-
-#sprmc="sprm>-10 && sprm<10"
-sprmc="sprm>-5 && sprm<5"
+# -----------------------------------------------------------
+# best timing window 77<=t<81
+#sprmc="sec_pr_mean>-10 && sec_pr_mean<10"
+sprmc="sec_pr_mean>-5 && sec_pr_mean<5"
 cs1=[76,77,78,79,80,81,82,83]
 cuts=["khet>=%d && khet<%d && %s"%(c,c+1,sprmc) for c in cs1]
 cs2=[76,78,80,82]
 cuts2=["khet>=%d && khet<%d && %s"%(c,c+2,sprmc) for c in cs2]
-
-rebin=2# 1 eV
+# -----------------------------------------------------------
+rebin=2# [eV]
 lx=6190.
 hx=6260.
 nbin=int((hx-lx)/rebin)
@@ -37,11 +38,10 @@ hx=6500.
 nbin=int((hx-lx)/rebin)
 hhe4=[ROOT.TH1F("he4_cut%d_%d"%(i,rebin),
                 "he4_cut%d_%d"%(i,rebin),nbin,lx,hx) for i in xrange(len(cuts))]
-
 hs=[]
 hs.append(hhe3)
 hs.append(hhe4)
-
+# -----------------------------------------------------------
 maxh=15.*rebin
 l_khe4=ROOT.TLine(util.KHE4LA_K,0.,util.KHE4LA_K,maxh)
 l_khe4.SetLineColor(3)
@@ -52,13 +52,15 @@ l_khe4c=ROOT.TLine(util.KHE4LA_K-be_he,0.,util.KHE4LA_K-be_he,maxh)
 l_khe4c.SetLineColor(5)
 l_khe3c=ROOT.TLine(util.KHE3LA-be_he,0.,util.KHE3LA-be_he,maxh)
 l_khe3c.SetLineColor(5)
-
+# -----------------------------------------------------------
+# using TTree.Draw to fill into histograms, this is slow...
+# you can also use root_numpy or can simply fill in the event loop
+# ROOT::RDataFrame is another candidate to create histograms from TTree
 for tree,h in zip(trees,hs):
     for hi,ci in zip(h,cuts):
         print hi.GetName(), ci
         tree.Draw("ene>>"+hi.GetName(),"%s"%(ci),"GOFF")
-
-
+# -----------------------------------------------------------
 cnames=["c%s"%(r) for r in runs]
 cvs = [ROOT.TCanvas(cn,cn) for cn in cnames]
 cvs[0].cd()
@@ -85,7 +87,6 @@ l_khe3.Draw("same")
 l_khe3c.Draw("same")
 cvs[0].Update()
 cvs[0].SaveAs(util.figdir+"/khetcuts_run%s_%d.pdf"%(runs[0],rebin))
-
 
 
 cvs[1].cd()
