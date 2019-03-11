@@ -10,8 +10,8 @@ import pyroot_util as util
 util= reload(util)
 
 
-runs=util.runs_he3
-#runs=[160,161]# for test
+#runs=util.runs_he3
+runs=[160,161]# for test
 #runs=util.runs_he4
 #runs=[320,321]# for test
 
@@ -94,16 +94,16 @@ bp_jbr_region_sum  = np.zeros(1,dtype=np.float64)
 bp_sec_pr_mean     = np.zeros(1,dtype=np.float64)
 bp_sec_enemean     = np.zeros(1,dtype=np.float64)
 toutbranch('run',            bp_run,             'run/I')
-toutbranch('ch',             bp_ch,              'channel/I')
-toutbranch('ev',             bp_ev,              'eventID/I')
+toutbranch('ch',             bp_ch,              'ch/I')
+toutbranch('ev',             bp_ev,              'ev/I')
 toutbranch('beam',           bp_beam,            'beam/O')
-toutbranch('ene',            bp_ene,             'energy/D')
-toutbranch('ene_zero',       bp_ene_zero,        'energy_with_zero/D')
-toutbranch('khet',           bp_khet,            'beam_time_diff/D')
+toutbranch('ene',            bp_ene,             'ene/D')
+toutbranch('ene_zero',       bp_ene_zero,        'ene_zero/D')
+toutbranch('khet',           bp_khet,            'khet/D')
 toutbranch('filt_value',     bp_filt_value,      'filt_value/D')
 toutbranch('filt_value_dc',  bp_filt_value_dc,   'filt_value_dc/D')
 toutbranch('filt_value_phc', bp_filt_value_phc,  'filt_value_phc/D')
-toutbranch('energy_phc',     bp_energy_phc,      'mass_energy/D')
+toutbranch('energy_phc',     bp_energy_phc,      'energy_phc/D')
 toutbranch('peak_time',      bp_peak_time,       'peak_time/D')
 toutbranch('peak_value',     bp_peak_value,      'peak_value/D')
 toutbranch('postpeak_deriv', bp_postpeak_deriv,  'postpeak_deriv/D')
@@ -112,10 +112,10 @@ toutbranch('pretrig_rms',    bp_pretrig_rms,     'pretrig_rms/D')
 toutbranch('pulse_average',  bp_pulse_average,   'pulse_average/D')
 toutbranch('rise_time',      bp_rise_time,       'rise_time/D')
 toutbranch('timestamp',      bp_timestamp,       'timestamp/D')
-toutbranch('rowmodp',        bp_rowmodp,         'rowmodifiedp/D')
+toutbranch('rowmodp',        bp_rowmodp,         'rowmodp/D')
 toutbranch('pre_region_sum', bp_pre_region_sum,  'pre_region_sum/D')
 toutbranch('jbr_region_sum', bp_jbr_region_sum,  'jbr_region_sum/D')
-toutbranch('sec_pr_mean',    bp_sec_pr_mean,     'sec_peak_region_mean/D')
+toutbranch('sec_pr_mean',    bp_sec_pr_mean,     'sec_pr_mean/D')
 toutbranch('sec_enemean',    bp_sec_enemean,     'sec_enemean/D')
 # --------------------------------------------------------
 for j, (run,fin) in enumerate(zip(runs,fins)):
