@@ -3,7 +3,7 @@ from math import pow, sqrt
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-
+from matplotlib.patches import Rectangle
 
 spacing = 520# um
 rectangle_l = 350# um
@@ -298,8 +298,11 @@ def getDensityColors(resols):# normalized by resolution
     return colors
         
 def getRow(ch):
-    p = np.where(pos[:,0]==ch)[0][0]
-    row = pos[p][3]
+    p = np.where(pos[:,0]==ch)[0]
+    if len(p)==0:
+        print "bad row for ch", ch
+        return -1
+    row = pos[p[0]][3]
     return row
 
 def getTwrPixAdd(row):
@@ -323,9 +326,12 @@ def getTwr(ch):
     return twr
     
 def getTESPos(ch):
-    p = np.where(pos[:,0]==ch)[0][0]
-    x = pos[p][1]
-    y = pos[p][2]
+    p = np.where(pos[:,0]==ch)[0]
+    if len(p)==0:
+        print "bad row for ch", ch
+        return -1
+    x = pos[p[0]][1]
+    y = pos[p[0]][2]
     return x, y
 
 
@@ -386,9 +392,7 @@ def getPlotRectPlane(i=1,j=1,k=1,chans=[1]):
     for ch in chans:
         x,y = getTESPos(ch)
         edgecolor = getColColor(ch)
-        rect = plt.Rectangle((x-l/2.,y-l/2.),l,l,fill=False,
-                             edgecolor=edgecolor,alpha=0.4)
-        ax.add_patch(rect)
+        ax.add_patch(Rectangle((x-l/2.,y-l/2.),l,l,fill=False,edgecolor=edgecolor,alpha=0.4))
     return ax
 
 
@@ -401,8 +405,7 @@ def getPlotDensityPlane(i=1,j=1,k=1,chans=[1],resols=[1.]):
     for i in xrange(0,len(chans),1):
         x,y = getTESPos(chans[i])
         c = colors[i]
-        rect = plt.Rectangle((x-l/2.,y-l/2.),l,l,fill=True,color=c,alpha=0.2)
-        ax.add_patch(rect)
+        ax.add_patch(Rectangle((x-l/2.,y-l/2.),l,l,fill=True,color=c,alpha=0.2))
     return ax
 
 

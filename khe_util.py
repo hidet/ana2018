@@ -32,6 +32,19 @@ NUM_ROWS = 30
 # (nSamples - npreSamples) * number of rows
 GLOBAL_PT_OFFSET = (1024-256)*NUM_ROWS
 
+hpht_phc="hpht_phc"# hname
+
+
+def get_usechans(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR):
+    datadir = os.path.expanduser(DATADIR)
+    dir_p = os.path.join(datadir,"run%04d"%pulse_runnum)
+    dir_n = os.path.join(datadir,"run%04d"%noise_runnum)
+    avail_chans = mass.ljh_util.ljh_get_channels_both(dir_p,dir_n)
+    chans = avail_chans[:min(len(avail_chans),maxchans)]
+    for ch in badchans:
+        if ch in chans: chans.remove(ch)
+    return chans
+
 def get_file_lists(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR):
     datadir = os.path.expanduser(DATADIR)
     dir_p = os.path.join(datadir,"run%04d"%pulse_runnum)
@@ -44,17 +57,19 @@ def get_file_lists(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR):
     noise_files = [f+".ljh" for f in mass.ljh_util.ljh_chan_names(dir_n,chans)]
     return pulse_files, noise_files
 
+def ljh_fnames_ch(fnames, chan):
+    basenames = [mass.ljh_util.ljh_basename_channum(fname)[0] for fname in fnames]
+    return ["%s_chan%d"%(basename,chan) for basename in basenames]
 
-def get_mergedfile_lists(pulse_runnum, noise_runnum, maxchans, badchans, DATADIR):
+def get_multiple_file_lists(pulse_runnums, noise_runnum, maxchans, badchans, DATADIR):
     datadir = os.path.expanduser(DATADIR)
-    datamdir = os.path.expanduser(DATADIR)+"/merged"
-    dir_p = os.path.join(datamdir,"run%04d"%pulse_runnum)
+    dir_ps = [os.path.join(datadir,"run%04d"%pulse_runnum) for pulse_runnum in pulse_runnums]
     dir_n = os.path.join(datadir,"run%04d"%noise_runnum)
-    avail_chans = mass.ljh_util.ljh_get_channels_both(dir_p,dir_n)
+    avail_chans = mass.ljh_util.ljh_get_channels_both(dir_ps[0],dir_n)
     chans = avail_chans[:min(len(avail_chans),maxchans)]
     for ch in badchans:
         if ch in chans: chans.remove(ch)
-    pulse_files = [f+".ljh" for f in mass.ljh_util.ljh_chan_names(dir_p,chans)]
+    pulse_files = [[f+".ljh" for f in ljh_fnames_ch(dir_ps,chan)] for chan in chans]
     noise_files = [f+".ljh" for f in mass.ljh_util.ljh_chan_names(dir_n,chans)]
     return pulse_files, noise_files
 
@@ -200,12 +215,12 @@ def linefitds(ds, linename):
     elo,ehi = mass.STANDARD_FEATURES[linename]-50,mass.STANDARD_FEATURES[linename]+50
     edges = np.arange(elo,ehi,1)
     counts, _ = np.histogram(ds.p_energy[ds.good()],edges)
-    fitter = getattr(mass.line_fits,linename+"Fitter")()
+    fitter = getattr(mass,linename+"Fitter")()
     fitter.fit(counts, edges,plot=False,)
     return fitter
 
 def linefit(counts, edges, linename):
-    fitter = getattr(mass.calibration,linename+"Fitter")()
+    fitter = getattr(mass,linename+"Fitter")()
 #    fitter = getattr(mass.fluorescence_lines,linename)()
     fitter.fit(counts, edges, plot=False)
     params = fitter.last_fit_params[:]

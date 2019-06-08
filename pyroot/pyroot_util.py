@@ -2,7 +2,15 @@
 import sys
 import os
 import pandas as pd
+import numpy as np
+import mass
 import optparse
+import ROOT
+
+number_of_rows=30.
+frame_timebase=7.18e-06
+row_timebase=frame_timebase/number_of_rows
+row_offset=(1024-256)*number_of_rows
 
 datadir="%s"%(os.environ['HEATESDATADIR'])
 dumprootdir="%s/dumproot"%(os.environ['HEATESDATADIR'])
@@ -14,9 +22,60 @@ hpht_phc="hpht_phc"# important hname
 RUNINFO="%s/csv/data_TMU_2018U.csv"%(os.environ['HEATESANADIR'])
 tree_name="chanall"
 
+hpht_phc       = "hpht_phc";
+hene_phc       = "hene_phc";
+fitTES_tag     = "fitTES";# fit function                            
+fitElem_tag    = "fitTES";# fit function                            
+fitUser_tag    = "fitTES";# fit function                            
+ps_tag         = "peak_search";# peak search                        
+sp3meander_tag = "sp3meander";# energy calibration                  
+sp3mean_tag    = "sp3mean";# energy calibration                     
+gmean_tag      = "gmean";# energy calibration                       
+gcalib_tag     = "gcalib";# energy calibration                      
+sp3calib_tag   = "sp3calib";# energy calibration                    
+hene_tag       = "hene";# energy converted histo                    
+calib_tag      = "calib";# output root file    
+
 parser = optparse.OptionParser()
 parser.add_option('--pre',  dest='cut_pre', action="store",type=int, help='set cut for pre samples',default=0)
 parser.add_option('--post',  dest='cut_post', action="store",type=int, help='set cut for post samples',default=0)
+parser.add_option('--spill',  dest='spill', action="store",type=int, help='set spill 0:off 1:on',default=-1)
+
+
+root_type_names = [
+    "Bool_t",
+    "Char_t",
+    "UChar_t",
+    "Short_t",
+    "UShort_t",
+    "Int_t",
+    "UInt_t",
+    "Long64_t",
+    "ULong64_t",
+    "Float_t",
+    "Double_t"]
+
+python_types = [
+    "B",#       unsigned char   int                 1 (used as boolean)
+    "b",#       signed char     int                 1
+    "B",#       unsigned char   int                 1
+    "h",#       signed short    int                 2
+    "H",#       unsigned short  int                 2
+    "i",#       signed int      int                 2
+    "I",#       unsigned int    long                2
+    "l",#       signed long     int                 4
+    "L",#       unsigned long   long                4
+    "f",#       float           float               4
+    "d"]#       double          float               8
+
+
+def type_convert_root_to_python(n):
+    if n in root_type_names:
+        idx = root_type_names.index(n)
+        return python_types[idx]
+    else:
+        print "Error: ROOT type is strange %s"%n
+        return ""
 
 def get_noise_list(runs):
     if os.path.isfile(RUNINFO)==False: 
@@ -54,6 +113,57 @@ def check_continue():
         sys.exit(0)
     else:
         sys.stdout.write("Please respond with 'yes' or 'no'")
+
+def get_hist_bins(h,elo,ehi):
+    bin_s=h.FindBin(elo)
+    bin_e=h.FindBin(ehi)
+    bins=np.arange(bin_s,bin_e+1)
+    nbin = bin_e - bin_s + 1
+    bw=h.GetBinWidth(bin_s)
+    minx=h.GetBinLowEdge(bin_s)
+    maxx=h.GetBinLowEdge(bin_e)+bw
+    bin_edges=np.arange(minx,maxx+bw,bw)
+    hist = [h.GetBinContent(b) for b in bins]
+    hist = np.array(hist)
+    return hist,bin_edges
+
+def linefit(hist,bin_edges,linename):
+    fitter = mass.getfitter(linename)
+    fitter.fit(hist,bin_edges,plot=False)
+    params = fitter.last_fit_params[:]
+    params[fitter.param_meaning["tail_frac"]]=0.25
+    params[fitter.param_meaning["dP_dE"]]=1
+    params[fitter.param_meaning["resolution"]]=6
+    fitter.fit(hist,bin_edges,params=params,hold=[2],vary_tail=True, plot=False)
+    return fitter
+
+
+def event_check(ev,jbrs_m,jbrs_p):
+    if ev.good!=1: return False
+    if ev.primary!=1: return False
+    if ev.jbr_region_sum>jbrs_m and ev.jbr_region_sum<jbrs_p: return True
+    else: return False
+
+def GetSpline3CalibDir(fname, hname):
+    '''
+    energy calibration with ROOT.TSpline3
+    '''
+    f= ROOT.TFile.Open(fname,"read")
+    if f.IsZombie():
+        print "Warning: cannot open file "+fname
+        return None, None
+    fd = f.GetDirectory(hname);
+    if not fd:# fd could be nullptr
+        f.Close()
+        return None, None
+    sp3_name = "%s_%s"%(sp3calib_tag,hname)
+    sp3zero_name = "%s_%s_zero"%(sp3calib_tag,hname)
+    sp3 = fd.Get(sp3_name)
+    sp3zero = fd.Get(sp3zero_name)
+    if not sp3 or not sp3zero:# sp3 or sp3zero could be nullptr
+        f.Close()
+        return None, None
+    return sp3, sp3zero
 
 
 # --------------------------------------------------------
