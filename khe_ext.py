@@ -177,6 +177,7 @@ def calc_external_trigger_timing(ds,external_trigger_rowcount,forceNew=False):
             "p_dt"]
     if forceNew or not params[0] in ds.hdf5_group:
         print ".",
+        sys.stdout.flush()
         rows_after_last_external_trigger_nrp, rows_until_next_external_trigger_nrp\
             =mass.core.analysis_algorithms.nearest_arrivals(ds.p_rowp[:], external_trigger_rowcount[:])
         rows_after_last_external_trigger_nrn, rows_until_next_external_trigger_nrn\

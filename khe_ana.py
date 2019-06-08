@@ -97,7 +97,7 @@ class KHE():
             cal_pulse_files,cal_noise_files = util.get_file_lists(self.cal_runnum,self.noise_runnum,
                                                                   self.maxchans,self.badchans,self.DATADIR)
             # assuming add="" in the name of a calibration run
-            self.calibration_hdf5_filename = util.generate_hdf5_filename(cal_pulse_files[0],"_noi%04d"%(self.calibration_noisenum+self.masstag))
+            self.calibration_hdf5_filename = util.generate_hdf5_filename(cal_pulse_files[0],"_noi%04d"%(self.calibration_noisenum)+self.masstag)
        # --- catecut and file names ---
         add=self.multiruns
         if self.use_new_filters==False:           add += "_old_filter"
